@@ -22,5 +22,5 @@ RUN ./mvnw clean package -DskipTests
 # Expose the port your Spring Boot app runs on
 EXPOSE 8080
 
-# Run the Spring Boot jar
-CMD ["java", "-jar", "target/promoter-app-0.0.1-SNAPSHOT.jar"]
+# 🔥 FIX: run whatever jar Maven builds
+CMD ["sh", "-c", "java -jar target/*.jar"]
