@@ -25,9 +25,6 @@ public class CreatorRegDTO {
     private Integer projectsCompleted;
     private WorkPreference workPreference;
     private BigDecimal hourlyRate;
-    @ElementCollection
-    @CollectionTable(name = "creator_languages", joinColumns = @JoinColumn(name = "creator_id"))
-    @Column(name = "language")
     private List<String> languages;
     private String bio;
     private String portfolioUrl;
