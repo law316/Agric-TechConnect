@@ -1,0 +1,29 @@
+# ===== IntelliJ / IDE =====
+.idea/
+*.iml
+/shelf/
+/workspace.xml
+/httpRequests/
+/dataSources/
+/dataSources.local.xml
+
+# ===== Maven =====
+target/
+
+# ===== Logs =====
+*.log
+
+# ===== Environment =====
+.env
+
+# ===== VS Code =====
+.vscode/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+# IntelliJ project files
+compiler.xml
+encodings.xml
+jarRepositories.xml
+misc.xml
