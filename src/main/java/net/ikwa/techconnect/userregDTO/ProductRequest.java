@@ -13,4 +13,6 @@ public class ProductRequest {
     private BigDecimal price;
     private ProductType type;
     private String imageUrl;
+
+
 }
