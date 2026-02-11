@@ -39,6 +39,8 @@ public class SecConfig {
         // Vercel deployments
         config.addAllowedOriginPattern("https://*.vercel.app");
 
+        config.addAllowedOriginPattern("https://creator-connect-pyth.vercel.app");
+
         // Production domains
              config.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS"

@@ -39,6 +39,7 @@ public class CreatorUserModel {
     @CollectionTable(name = "creator_languages", joinColumns = @JoinColumn(name = "creator_id"))
     @Column(name = "language")
     private List<String> languages;
+    @Column(columnDefinition = "TEXT")
     private String bio;
     private String portfolioUrl;
     private String githubUrl;

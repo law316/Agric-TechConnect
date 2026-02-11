@@ -12,7 +12,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/tech")
 @RequiredArgsConstructor
-@CrossOrigin
 public class TechLoginController {
 
     private final TechLoginService techLoginService;
@@ -28,7 +27,16 @@ public class TechLoginController {
                     techLoginService.authenticateCreator(email, password);
 
             // ✅ SUCCESS
-            return ResponseEntity.ok(creator);
+            return ResponseEntity.ok(
+                    Map.of(
+                            "id", creator.getId(),
+                            "name", creator.getName(),
+                            "email", creator.getEmail(),
+                            "profileImage", creator.getProfileImage(),
+                            "accountType", "creator"
+                    )
+            );
+
 
         } catch (IllegalArgumentException e) {
             // ❌ INVALID CREDENTIALS
