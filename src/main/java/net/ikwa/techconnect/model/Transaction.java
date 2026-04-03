@@ -1,12 +1,10 @@
 package net.ikwa.techconnect.model;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 import lombok.*;
 
-import net.ikwa.techconnect.model.PromoterUserModel;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
@@ -21,15 +19,40 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // The user making the payment / owner of this transaction
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private PromoterUserModel user;
 
-    private BigDecimal amount;
+    // Unique reference sent to Flutterwave
+    @Column(nullable = false, unique = true)
+    private String txRef;
 
-    private String type; // commission, withdrawal, bonus, etc.
+    // Example: REGISTRATION_PAYMENT, PRODUCT_PAYMENT, SUBSCRIPTION_PAYMENT, WITHDRAWAL
+    @Column(nullable = false)
+    private String paymentType;
 
-    private LocalDateTime date = LocalDateTime.now();
+    // Optional: amount expected from Flutterwave
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal expectedAmount;
 
-    private String status = "completed"; // pending/completed/failed
+    // Actual amount confirmed after verification
+    @Column(precision = 19, scale = 2)
+    private BigDecimal paidAmount;
+
+    // NGN by default
+    private String currency = "NGN";
+
+    // PENDING, SUCCESS, FAILED
+    private String status = "PENDING";
+
+    // Flutterwave returned transaction ID
+    private String flutterwaveTransactionId;
+
+    // Optional: Flutterwave payment method or channel
+    private String paymentMethod;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    private LocalDateTime verifiedAt;
 }

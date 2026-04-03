@@ -20,6 +20,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final TechRegRepo userRepository; // this handles CreatorUserModel
 
+
     public ProductResponse createProduct(Integer userId, ProductRequest request) {
 
         CreatorUserModel creator = userRepository.findById(userId)
@@ -62,6 +63,8 @@ public class ProductService {
                 .rating(product.getRating())
                 .reviews(product.getReviews())
                 .createdAt(product.getCreatedAt().toString())
+
+
                 .build();
     }
     public ProductResponse updateProduct(Integer productId, ProductRequest request) {
@@ -77,6 +80,18 @@ public class ProductService {
 
         productRepository.save(product);
 
+        return mapToResponse(product);
+    }
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public ProductResponse getProductById(Integer productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
         return mapToResponse(product);
     }
 

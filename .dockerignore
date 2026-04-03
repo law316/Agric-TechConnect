@@ -1,0 +1,41 @@
+# flyctl launch added from .gitignore
+# ===== IntelliJ / IDE =====
+**\.idea
+**\*.iml
+shelf
+workspace.xml
+httpRequests
+dataSources
+dataSources.local.xml
+
+# ===== Maven =====
+**\target
+
+# ===== Logs =====
+**\*.log
+
+# ===== Environment =====
+**\.env
+
+# ===== VS Code =====
+**\.vscode
+
+# ===== OS =====
+**\.DS_Store
+**\Thumbs.db
+# IntelliJ project files
+**\compiler.xml
+**\encodings.xml
+**\jarRepositories.xml
+**\misc.xml
+
+# flyctl launch added from .idea\.gitignore
+# Default ignored files
+.idea\shelf
+.idea\workspace.xml
+# Editor-based HTTP Client requests
+.idea\httpRequests
+# Datasource local storage ignored files
+.idea\dataSources
+.idea\dataSources.local.xml
+fly.toml

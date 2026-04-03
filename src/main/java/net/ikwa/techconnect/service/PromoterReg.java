@@ -103,10 +103,13 @@ public class PromoterReg {
             // Record commission transaction
             Transaction transaction = Transaction.builder()
                     .user(referrer)
-                    .amount(commission)
-                    .type("commission")
-                    .status("completed")
-                    .date(LocalDateTime.now())
+                    .txRef("COMMISSION-" + UUID.randomUUID())
+                    .paymentType("COMMISSION")
+                    .expectedAmount(commission)
+                    .paidAmount(commission)
+                    .currency("NGN")
+                    .status("SUCCESS")
+                    .createdAt(LocalDateTime.now())
                     .build();
             transactionRepo.save(transaction);
         }

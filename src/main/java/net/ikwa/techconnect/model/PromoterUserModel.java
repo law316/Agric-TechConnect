@@ -66,4 +66,17 @@ public class PromoterUserModel {
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal commissionBalance = BigDecimal.ZERO;
+
+    @Column(precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal systemShareRecorded = BigDecimal.ZERO;
+
+    @Builder.Default
+    private Boolean paymentVerified = false;
+
+    private String phone;
 }
