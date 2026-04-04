@@ -45,4 +45,6 @@ public class ManualPaymentModel {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    private String status;
 }

@@ -43,7 +43,7 @@ public class SecConfig {
 
         // Production domains
              config.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"
         ));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setExposedHeaders(Arrays.asList("*"));

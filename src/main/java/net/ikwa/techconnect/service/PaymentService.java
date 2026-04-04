@@ -178,7 +178,7 @@ public class PaymentService {
         verifyAndProcessPayment(txRef, transactionId);
     }
 
-    private void applyBusinessSuccess(Transaction savedTx) {
+    /*private void applyBusinessSuccess(Transaction savedTx) {
         if (!"REGISTRATION_PAYMENT".equalsIgnoreCase(savedTx.getPaymentType())) {
             return;
         }
@@ -216,6 +216,68 @@ public class PaymentService {
         paidUser.setSystemShareRecorded(currentSystemShare.add(systemShare));
 
         // optional: activate paid user after successful registration payment
+        paidUser.setPaymentVerified(true);
+
+        userRepository.save(paidUser);
+    }*/
+    private void applyBusinessSuccess(Transaction savedTx) {
+        if (!"REGISTRATION_PAYMENT".equalsIgnoreCase(savedTx.getPaymentType())) {
+            return;
+        }
+
+        PromoterUserModel paidUser = userRepository.findById(savedTx.getUser().getId())
+                .orElseThrow(() -> new RuntimeException("Paid user not found"));
+
+        BigDecimal paidAmount = savedTx.getPaidAmount();
+        if (paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Paid amount is invalid");
+        }
+
+        BigDecimal directCommission = paidAmount
+                .multiply(new BigDecimal("0.70"))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal systemShare = paidAmount
+                .multiply(new BigDecimal("0.30"))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+
+        // The person who directly referred the paid user
+        PromoterUserModel directReferrer = paidUser.getReferredBy();
+
+        if (directReferrer != null) {
+            BigDecimal currentCommission = directReferrer.getCommissionBalance() == null
+                    ? BigDecimal.ZERO
+                    : directReferrer.getCommissionBalance();
+
+            // Rule 1: direct referrer gets 70%
+            directReferrer.setCommissionBalance(currentCommission.add(directCommission));
+            userRepository.save(directReferrer);
+
+            // Rule 2: direct referrer's own parent gets 15% of what direct referrer just earned
+            PromoterUserModel parentOfDirectReferrer = directReferrer.getReferredBy();
+
+            if (parentOfDirectReferrer != null) {
+                BigDecimal overrideCommission = directCommission
+                        .multiply(new BigDecimal("0.15"))
+                        .setScale(2, java.math.RoundingMode.HALF_UP);
+
+                BigDecimal parentCurrentCommission = parentOfDirectReferrer.getCommissionBalance() == null
+                        ? BigDecimal.ZERO
+                        : parentOfDirectReferrer.getCommissionBalance();
+
+                parentOfDirectReferrer.setCommissionBalance(
+                        parentCurrentCommission.add(overrideCommission)
+                );
+
+                userRepository.save(parentOfDirectReferrer);
+            }
+        }
+
+        BigDecimal currentSystemShare = paidUser.getSystemShareRecorded() == null
+                ? BigDecimal.ZERO
+                : paidUser.getSystemShareRecorded();
+
+        paidUser.setSystemShareRecorded(currentSystemShare.add(systemShare));
         paidUser.setPaymentVerified(true);
 
         userRepository.save(paidUser);
