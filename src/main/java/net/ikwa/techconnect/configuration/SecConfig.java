@@ -38,6 +38,7 @@ public class SecConfig {
 
         // Vercel deployments
         config.addAllowedOriginPattern("https://*.vercel.app");
+        config.addAllowedOrigin("https://www.technest.space");
 
         config.addAllowedOriginPattern("https://creator-connect-pyth.vercel.app");
 
