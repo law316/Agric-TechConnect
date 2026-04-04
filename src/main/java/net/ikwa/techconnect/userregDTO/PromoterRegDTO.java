@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class PromoterRegDTO {
-
+    private Integer id;
     // BASIC INFO
     private String name;
     private String email;
@@ -35,6 +35,7 @@ public class PromoterRegDTO {
     private BigDecimal totalEarnings;
     private BigDecimal walletBalance;
     private boolean active;
+    private Boolean paymentVerified;
     private LocalDateTime createdAt;
 
     // REFERRER INFO (safe display)
@@ -190,5 +191,21 @@ public class PromoterRegDTO {
 
     public void setReferredByName(String referredByName) {
         this.referredByName = referredByName;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Boolean getPaymentVerified() {
+        return paymentVerified;
+    }
+
+    public void setPaymentVerified(Boolean paymentVerified) {
+        this.paymentVerified = paymentVerified;
     }
 }

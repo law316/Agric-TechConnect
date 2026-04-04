@@ -130,4 +130,12 @@ public class PromoterUserRegController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/{email}/commission-balance")
+    public ResponseEntity<?> getCommissionBalance(@PathVariable String email) {
+        try {
+            return ResponseEntity.ok(promoterService.getCommissionBalance(email));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

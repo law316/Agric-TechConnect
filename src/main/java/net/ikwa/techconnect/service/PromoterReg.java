@@ -4,6 +4,7 @@ import net.ikwa.techconnect.model.PromoterUserModel;
 import net.ikwa.techconnect.model.Transaction;
 import net.ikwa.techconnect.repo.PromoterRegRepo;
 import net.ikwa.techconnect.repo.TransactionRepo;
+import net.ikwa.techconnect.userregDTO.PromoterCommissionBalanceDTO;
 import net.ikwa.techconnect.userregDTO.PromoterRegDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -206,6 +207,23 @@ public class PromoterReg {
         String randomPart = UUID.randomUUID().toString().substring(0, 5);
         return base + randomPart;
     }
+
+    public PromoterCommissionBalanceDTO getCommissionBalance(String email) {
+        PromoterUserModel promoter = repo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Promoter not found"));
+
+        return PromoterCommissionBalanceDTO.builder()
+                .userId(promoter.getId())
+                .email(promoter.getEmail())
+                .commissionBalance(
+                        promoter.getCommissionBalance() == null
+                                ? BigDecimal.ZERO
+                                : promoter.getCommissionBalance()
+                )
+                .build();
+    }
+
+
 
 
 
