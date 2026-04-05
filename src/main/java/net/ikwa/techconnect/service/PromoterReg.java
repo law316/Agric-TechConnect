@@ -30,7 +30,7 @@ public class PromoterReg {
     // =============================
     // REGISTER NEW PROMOTER
     // =============================
-    public void registerPromoter(PromoterRegDTO dto) {
+    /*public void registerPromoter(PromoterRegDTO dto) {
 
         if (dto.getName() == null || dto.getName().isEmpty()
                 || dto.getEmail() == null || dto.getEmail().isEmpty()
@@ -81,6 +81,60 @@ public class PromoterReg {
         }
 
         repo.save(promoter);
+    }*/
+    public PromoterRegDTO registerPromoter(PromoterRegDTO dto) {
+
+        if (dto.getName() == null || dto.getName().isEmpty()
+                || dto.getEmail() == null || dto.getEmail().isEmpty()
+                || dto.getPassword() == null || dto.getPassword().isEmpty()
+                || dto.getCountry() == null || dto.getCountry().isEmpty()
+                || dto.getLocation() == null || dto.getLocation().isEmpty()) {
+            throw new IllegalArgumentException("Required fields are missing");
+        }
+
+        if (repo.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
+        }
+
+        String encodedPassword = passwordEncoder.encode(dto.getPassword());
+
+        String referralCode = generateReferralCode(dto.getName());
+        while (repo.findByReferralCode(referralCode).isPresent()) {
+            referralCode = generateReferralCode(dto.getName());
+        }
+
+        PromoterUserModel promoter = new PromoterUserModel();
+        promoter.setName(dto.getName());
+        promoter.setEmail(dto.getEmail());
+        promoter.setPassword(encodedPassword);
+        promoter.setProfileImage(dto.getProfileImage());
+        promoter.setGender(dto.getGender());
+        promoter.setCountry(dto.getCountry());
+        promoter.setLocation(dto.getLocation());
+        promoter.setFacebook(dto.getFacebook());
+        promoter.setInstagram(dto.getInstagram());
+        promoter.setTwitter(dto.getTwitter());
+        promoter.setLinkedinUrl(dto.getLinkedinUrl());
+
+        promoter.setReferralCode(referralCode);
+        promoter.setActive(true);
+        promoter.setTotalEarnings(BigDecimal.ZERO);
+        promoter.setWalletBalance(BigDecimal.ZERO);
+        promoter.setCreatedAt(LocalDateTime.now());
+        promoter.setPaymentVerified(false);
+
+        if (dto.getReferredByCode() != null && !dto.getReferredByCode().isEmpty()) {
+            PromoterUserModel referrer = repo.findByReferralCode(dto.getReferredByCode())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid referral code"));
+            promoter.setReferredBy(referrer);
+
+            referrer.setTotalReferrals(referrer.getTotalReferrals() + 1);
+            repo.save(referrer);
+        }
+
+        PromoterUserModel savedPromoter = repo.save(promoter);
+
+        return getPromoterDetails(savedPromoter.getEmail());
     }
 
     // =============================
@@ -123,7 +177,7 @@ public class PromoterReg {
     // =============================
     // GET PROMOTER DETAILS
     // =============================
-    public PromoterRegDTO getPromoterDetails(String email) {
+    /*public PromoterRegDTO getPromoterDetails(String email) {
         PromoterUserModel promoter = repo.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Promoter not found"));
 
@@ -147,6 +201,36 @@ public class PromoterReg {
         if (promoter.getReferredBy() != null) {
             dto.setReferredByName(promoter.getReferredBy().getName());
         }
+        return dto;
+    }*/
+    public PromoterRegDTO getPromoterDetails(String email) {
+        PromoterUserModel promoter = repo.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Promoter not found"));
+
+        PromoterRegDTO dto = new PromoterRegDTO();
+        dto.setId(promoter.getId());
+        dto.setName(promoter.getName());
+        dto.setEmail(promoter.getEmail());
+        dto.setProfileImage(promoter.getProfileImage());
+        dto.setGender(promoter.getGender());
+        dto.setCountry(promoter.getCountry());
+        dto.setLocation(promoter.getLocation());
+        dto.setFacebook(promoter.getFacebook());
+        dto.setInstagram(promoter.getInstagram());
+        dto.setTwitter(promoter.getTwitter());
+        dto.setLinkedinUrl(promoter.getLinkedinUrl());
+        dto.setReferralCode(promoter.getReferralCode());
+        dto.setTotalReferrals(promoter.getTotalReferrals());
+        dto.setTotalEarnings(promoter.getTotalEarnings());
+        dto.setWalletBalance(promoter.getWalletBalance());
+        dto.setActive(promoter.isActive());
+        dto.setPaymentVerified(promoter.getPaymentVerified());
+        dto.setCreatedAt(promoter.getCreatedAt());
+
+        if (promoter.getReferredBy() != null) {
+            dto.setReferredByName(promoter.getReferredBy().getName());
+        }
+
         return dto;
     }
 

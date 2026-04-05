@@ -28,11 +28,20 @@ public class PromoterUserRegController {
     // =============================
     // REGISTER PROMOTER
     // =============================
-    @PostMapping("/register")
+    /*@PostMapping("/register")
     public ResponseEntity<?> registerPromoter(@RequestBody PromoterRegDTO dto) {
         try {
             promoterService.registerPromoter(dto);
             return ResponseEntity.ok("Promoter registered successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }*/
+    @PostMapping("/register")
+    public ResponseEntity<?> registerPromoter(@RequestBody PromoterRegDTO dto) {
+        try {
+            PromoterRegDTO savedPromoter = promoterService.registerPromoter(dto);
+            return ResponseEntity.ok(savedPromoter);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

@@ -57,7 +57,7 @@ public class PaymentController {
             if (looksSuccessful && transactionId != null && !transactionId.isBlank()) {
                 Transaction verified = paymentService.verifyAndProcessPayment(txRef, transactionId);
 
-                String successUrl = frontendBaseUrl + "/profile/promoter?email=" +
+                String successUrl = frontendBaseUrl + "/payment/success?email=" +
                         URLEncoder.encode(verified.getUser().getEmail(), StandardCharsets.UTF_8) +
                         "&payment=success&tx_ref=" +
                         URLEncoder.encode(txRef, StandardCharsets.UTF_8);
