@@ -428,7 +428,7 @@ public class PaymentService {
 
         return json.substring(firstQuote + 1, secondQuote);
     }
-    public Map<String, Object> getRegistrationPaymentStatus(Integer userId) {
+    /*public Map<String, Object> getRegistrationPaymentStatus(Integer userId) {
         PromoterUserModel user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -455,5 +455,169 @@ public class PaymentService {
                 "paidAmount", paidAmount,
                 "status", status
         );
+    }*/
+    public Map<String, Object> getRegistrationPaymentStatus(Integer userId) {
+        PromoterUserModel user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Transaction> txs = transactionRepo.findByUserIdAndPaymentType(userId, "REGISTRATION_PAYMENT");
+
+        Transaction tx = txs.stream()
+                .filter(t -> t.getCreatedAt() != null)
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .filter(t -> "SUCCESS".equalsIgnoreCase(t.getStatus()))
+                .findFirst()
+                .orElse(
+                        txs.stream()
+                                .filter(t -> t.getCreatedAt() != null)
+                                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                                .findFirst()
+                                .orElse(null)
+                );
+
+        boolean verified = user.getPaymentVerified() != null && user.getPaymentVerified();
+
+        BigDecimal paidAmount = tx != null && tx.getPaidAmount() != null
+                ? tx.getPaidAmount()
+                : BigDecimal.ZERO;
+
+        String status = tx != null && tx.getStatus() != null
+                ? tx.getStatus()
+                : "UNKNOWN";
+
+        return Map.of(
+                "userId", user.getId(),
+                "verified", verified,
+                "paymentVerified", verified,
+                "canLogin", verified,
+                "message", verified ? "Activation fee verified" : "Activation fee not yet verified",
+                "paidAmount", paidAmount,
+                "status", status
+        );
+    }
+
+    public Transaction reconcilePendingPayment(String txRef) {
+        Transaction tx = transactionRepo.findByTxRef(txRef.trim())
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        if (!"REGISTRATION_PAYMENT".equalsIgnoreCase(tx.getPaymentType())) {
+            throw new RuntimeException("Only registration payments can be reconciled here");
+        }
+
+        if ("SUCCESS".equalsIgnoreCase(tx.getStatus())) {
+            return tx;
+        }
+
+        return verifyAndProcessPaymentByReference(txRef);
+    }
+    public Transaction verifyAndProcessPaymentByReference(String txRef) {
+        String cleanTxRef = txRef == null ? "" : txRef.trim();
+
+        String url = flutterwaveBaseUrl + "/v3/transactions/verify_by_reference?tx_ref=" + cleanTxRef;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(flutterwaveSecretKey);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                Map.class
+        );
+
+        Map<String, Object> body = response.getBody();
+        if (body == null || !"success".equalsIgnoreCase(String.valueOf(body.get("status")))) {
+            throw new RuntimeException("Unable to verify payment with Flutterwave");
+        }
+
+        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        if (data == null) {
+            throw new RuntimeException("No payment data returned from Flutterwave");
+        }
+
+        String returnedTxRef = String.valueOf(data.get("tx_ref"));
+        String status = String.valueOf(data.get("status"));
+        String currency = String.valueOf(data.get("currency"));
+        Object amountObj = data.get("amount");
+        Object idObj = data.get("id");
+
+        if (!cleanTxRef.equals(returnedTxRef)) {
+            throw new RuntimeException("Verified tx_ref does not match local transaction");
+        }
+
+        if (!"successful".equalsIgnoreCase(status)) {
+            throw new RuntimeException("Payment is not successful on Flutterwave");
+        }
+
+        Transaction tx = transactionRepo.findByTxRef(cleanTxRef)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        BigDecimal verifiedAmount = new BigDecimal(String.valueOf(amountObj));
+
+        if (!"NGN".equalsIgnoreCase(currency)) {
+            throw new RuntimeException("Invalid currency");
+        }
+
+        if (verifiedAmount.compareTo(tx.getExpectedAmount()) < 0) {
+            throw new RuntimeException("Paid amount is less than expected amount");
+        }
+
+        tx.setStatus("SUCCESS");
+        tx.setPaidAmount(tx.getExpectedAmount());
+        tx.setFlutterwaveTransactionId(idObj == null ? null : String.valueOf(idObj));
+        tx.setVerifiedAt(LocalDateTime.now());
+
+        transactionRepo.save(tx);
+
+        applyBusinessSuccess(tx);
+
+        return tx;
+    }
+
+    public List<Map<String, Object>> getPendingRegistrationPayments() {
+        return transactionRepo.findAll().stream()
+                .filter(t -> "REGISTRATION_PAYMENT".equalsIgnoreCase(t.getPaymentType()))
+                .filter(t -> "PENDING".equalsIgnoreCase(t.getStatus()))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(t -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("txRef", t.getTxRef());
+                    item.put("userId", t.getUser().getId());
+                    item.put("name", t.getUser().getName() == null ? "" : t.getUser().getName());
+                    item.put("email", t.getUser().getEmail() == null ? "" : t.getUser().getEmail());
+                    item.put("amount", t.getExpectedAmount() == null ? BigDecimal.ZERO : t.getExpectedAmount());
+                    item.put("status", t.getStatus());
+                    item.put("createdAt", t.getCreatedAt() == null ? "" : t.getCreatedAt().toString());
+                    return item;
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+    public List<Map<String, Object>> getAllRegistrationPayments() {
+        return transactionRepo.findAll().stream()
+                .filter(t -> "REGISTRATION_PAYMENT".equalsIgnoreCase(t.getPaymentType()))
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .map(t -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("id", t.getId());
+                    item.put("txRef", t.getTxRef());
+                    item.put("userId", t.getUser() != null ? t.getUser().getId() : null);
+                    item.put("name", t.getUser() != null && t.getUser().getName() != null ? t.getUser().getName() : "");
+                    item.put("email", t.getUser() != null && t.getUser().getEmail() != null ? t.getUser().getEmail() : "");
+                    item.put("amount", t.getExpectedAmount() != null ? t.getExpectedAmount() : BigDecimal.ZERO);
+                    item.put("paidAmount", t.getPaidAmount() != null ? t.getPaidAmount() : BigDecimal.ZERO);
+                    item.put("status", t.getStatus() != null ? t.getStatus() : "UNKNOWN");
+                    item.put("paymentType", t.getPaymentType());
+                    item.put("flutterwaveTransactionId", t.getFlutterwaveTransactionId());
+                    item.put("createdAt", t.getCreatedAt() != null ? t.getCreatedAt().toString() : "");
+                    item.put("verifiedAt", t.getVerifiedAt() != null ? t.getVerifiedAt().toString() : "");
+                    return item;
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 }

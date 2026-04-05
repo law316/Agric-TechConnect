@@ -121,4 +121,34 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    @PostMapping("/admin/reconcile")
+    public ResponseEntity<?> reconcilePendingPayment(@RequestParam String txRef) {
+        try {
+            Transaction tx = paymentService.reconcilePendingPayment(txRef);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Payment reconciled successfully",
+                    "txRef", tx.getTxRef(),
+                    "status", tx.getStatus()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        }
+    }
+    @GetMapping("/admin/pending")
+    public ResponseEntity<?> getPendingRegistrationPayments() {
+        return ResponseEntity.ok(paymentService.getPendingRegistrationPayments());
+    }
+
+    @GetMapping("/admin/transactions")
+    public ResponseEntity<?> getAllRegistrationPayments() {
+        try {
+            return ResponseEntity.ok(paymentService.getAllRegistrationPayments());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        }
+    }
 }
